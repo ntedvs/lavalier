@@ -1,153 +1,63 @@
-# Lavalier
+# lavalier
 
-A lightweight TypeScript library for programmatic video editing using FFmpeg.
+simple video editing in typescript.
 
-## Features
-
-- Simple, chainable API for video manipulation
-- Trim videos to specific time ranges
-- Resize videos with custom scaling
-- Zero runtime dependencies
-- Built on top of FFmpeg for reliable video processing
-
-## Prerequisites
-
-Lavalier requires [FFmpeg](https://ffmpeg.org/) to be installed on your system and available in your PATH.
-
-### Installing FFmpeg
-
-**macOS:**
-
-```bash
-brew install ffmpeg
-```
-
-**Ubuntu/Debian:**
-
-```bash
-sudo apt install ffmpeg
-```
-
-**Windows:**
-Download from [ffmpeg.org](https://ffmpeg.org/download.html) or use:
-
-```bash
-choco install ffmpeg
-```
-
-## Installation
+## install
 
 ```bash
 npm install lavalier
-# or
-bun add lavalier
-# or
-yarn add lavalier
 ```
 
-## Usage
+**important:** you need [ffmpeg](https://ffmpeg.org/) installed on your system. lavalier is just a nice wrapper around it.
 
-### Basic Example
+## usage
 
 ```typescript
 import { video } from "lavalier"
 
-// Trim a video and resize it
 await video("input.mp4")
-  .trim(5, 30) // Extract seconds 5-30
-  .resize(0.5) // Scale to 50% size
+  .trim(5, 10)           // keep seconds 5-10
+  .resize(0.5)           // scale to 50%
+  .text("hello world", {
+    position: "center",
+    size: 32
+  })
   .export("output.mp4")
 ```
 
-### Trim Only
+that's it. chain operations, then export.
 
-```typescript
-import { video } from "lavalier"
+## api
 
-// Extract a 10-second clip starting at 1 minute
-await video("input.mp4").trim(60, 70).export("clip.mp4")
-```
+### `video(input: string)`
 
-### Resize Only
+creates a new video editor instance.
 
-```typescript
-import { video } from "lavalier"
+### `.trim(start: number, end: number)`
 
-// Create a half-size version of the video
-await video("input.mp4").resize(0.5).export("small.mp4")
+trim video to a time range (in seconds). keeps audio in sync.
 
-// Double the video size
-await video("input.mp4").resize(2.0).export("large.mp4")
-```
+### `.resize(scale: number)`
 
-### Chaining Multiple Operations
+scale video dimensions. `0.5` = half size, `2` = double size.
 
-```typescript
-import { video } from "lavalier"
+### `.text(content: string, options?)`
 
-// Operations are applied in order
-await video("input.mp4")
-  .trim(10, 60) // First, extract 10-60 seconds
-  .resize(0.75) // Then, scale to 75% size
-  .export("output.mp4")
-```
+overlay text on the video.
 
-## API
+**options:**
+- `position`: `{ x: number, y: number }` or `"center"` (default: `"center"`)
+- `size`: font size in pixels (default: `24`)
 
-### `video(inputPath: string): Video`
+### `.export(output: string)`
 
-Creates a new Video instance from an input file path.
+render the video with all operations applied. returns a promise.
 
-**Parameters:**
+## requirements
 
-- `inputPath` - Path to the input video file
+- node.js 18+
+- ffmpeg installed and available in your PATH
 
-**Returns:** A `Video` instance for chaining operations
+## license
 
-### `Video.trim(start: number, end: number): Video`
-
-Trims the video to a specific time range.
-
-**Parameters:**
-
-- `start` - Start time in seconds
-- `end` - End time in seconds
-
-**Returns:** A new `Video` instance with the trim operation added
-
-### `Video.resize(scale: number): Video`
-
-Resizes the video by a scaling factor.
-
-**Parameters:**
-
-- `scale` - Scaling multiplier (e.g., `0.5` for half size, `2.0` for double size)
-
-**Returns:** A new `Video` instance with the resize operation added
-
-### `Video.export(outputPath: string): Promise<void>`
-
-Exports the video with all applied operations to an output file.
-
-**Parameters:**
-
-- `outputPath` - Path where the output video will be saved
-
-**Returns:** A Promise that resolves when the export is complete
-
-## How It Works
-
-Lavalier uses a builder pattern to chain video operations together. When you call `export()`, it:
-
-1. Compiles all operations into FFmpeg's `filter_complex` syntax
-2. Spawns an FFmpeg process with the appropriate arguments
-3. Processes the video according to your specifications
-4. Saves the result to the output path
-
-All video processing is handled by FFmpeg, ensuring reliable and high-quality results.
-
-## License
-
-MIT License - Copyright 2025 Nathaniel Davis
-
-See [LICENSE](LICENSE) for details.
+MIT
