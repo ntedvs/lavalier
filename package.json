@@ -1,0 +1,38 @@
+{
+  "name": "lavalier",
+  "version": "0.0.1",
+  "description": "Simple video editing",
+  "keywords": [
+    "video",
+    "editing",
+    "ffmpeg",
+    "typescript"
+  ],
+  "homepage": "https://github.com/ntedvs/lavalier",
+  "repository": "github:ntedvs/lavalier",
+  "license": "MIT",
+  "author": "Nathaniel Davis <nate@qstreet.org>",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
