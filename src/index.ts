@@ -5,8 +5,9 @@ type Resize = { type: "resize"; scale: number }
 type Text = {
   type: "text"
   content: string
-  position: { x: number; y: number } | "center"
-  size: number
+  position?: { x: number; y: number } | "center"
+  size?: number
+  font?: string
 }
 
 type Operation = Trim | Resize | Text
@@ -51,16 +52,29 @@ class Video {
         i += 1
       } else if (o.type === "text") {
         const v = "v" + i
-        const calculations = { center: "x=(w-text_w)/2:y=(h-text_h)/2" }
+        const parts = []
 
-        const part =
-          typeof o.position === "string"
-            ? calculations[o.position]
-            : `x=${o.position.x}:y=${o.position.y}`
+        const escaped = o.content
+          .replace(/\\/g, "\\\\")
+          .replace(/'/g, "\\'")
+          .replace(/:/g, "\\:")
 
-        filters.push(
-          `[${video}]drawtext=text='${o.content}':${part}:fontsize=${o.size}:fontcolor=white[${v}]`
-        )
+        parts.push(`text='${escaped}'`)
+
+        if (o.position) {
+          const calculations = { center: "x=(w-text_w)/2:y=(h-text_h)/2" }
+
+          parts.push(
+            typeof o.position === "string"
+              ? calculations[o.position]
+              : `x=${o.position.x}:y=${o.position.y}`
+          )
+        }
+
+        if (o.font) parts.push(`font=${o.font}`)
+        if (o.size) parts.push(`fontsize=${o.size}`)
+
+        filters.push(`[${video}]drawtext=${parts.join(":")}[${v}]`)
 
         video = v
         i += 1
@@ -90,14 +104,15 @@ class Video {
 
   text(
     content: string,
-    options?: { position?: { x: number; y: number } | "center"; size?: number }
+    options?: {
+      position?: { x: number; y: number } | "center"
+      size?: number
+      font?: string
+    }
   ) {
-    const position = options?.position ?? "center"
-    const size = options?.size ?? 24
-
     return new Video(this.input, [
       ...this.operations,
-      { type: "text", content, position, size },
+      { type: "text", content, ...options },
     ])
   }
 

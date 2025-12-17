@@ -16,11 +16,11 @@ npm install lavalier
 import { video } from "lavalier"
 
 await video("input.mp4")
-  .trim(5, 10)           // keep seconds 5-10
-  .resize(0.5)           // scale to 50%
+  .trim(5, 10) // keep seconds 5-10
+  .resize(0.5) // scale to 50%
   .text("hello world", {
     position: "center",
-    size: 32
+    size: 32,
   })
   .export("output.mp4")
 ```
@@ -46,8 +46,10 @@ scale video dimensions. `0.5` = half size, `2` = double size.
 overlay text on the video.
 
 **options:**
-- `position`: `{ x: number, y: number }` or `"center"` (default: `"center"`)
-- `size`: font size in pixels (default: `24`)
+
+- `position`: `{ x: number, y: number }` or `"center"` (optional)
+- `size`: font size in pixels (optional)
+- `font`: font name (optional)
 
 ### `.export(output: string)`
 
