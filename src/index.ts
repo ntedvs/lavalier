@@ -2,8 +2,14 @@ import { spawn } from "child_process"
 
 type Trim = { type: "trim"; start: number; end: number }
 type Resize = { type: "resize"; scale: number }
+type Text = {
+  type: "text"
+  content: string
+  position: { x: number; y: number } | "center"
+  size: number
+}
 
-type Operation = Trim | Resize
+type Operation = Trim | Resize | Text
 
 class Video {
   private input
@@ -43,6 +49,21 @@ class Video {
 
         video = v
         i += 1
+      } else if (o.type === "text") {
+        const v = "v" + i
+        const calculations = { center: "x=(w-text_w)/2:y=(h-text_h)/2" }
+
+        const part =
+          typeof o.position === "string"
+            ? calculations[o.position]
+            : `x=${o.position.x}:y=${o.position.y}`
+
+        filters.push(
+          `[${video}]drawtext=text='${o.content}':${part}:fontsize=${o.size}:fontcolor=white[${v}]`
+        )
+
+        video = v
+        i += 1
       }
     }
 
@@ -64,6 +85,19 @@ class Video {
     return new Video(this.input, [
       ...this.operations,
       { type: "resize", scale },
+    ])
+  }
+
+  text(
+    content: string,
+    options?: { position?: { x: number; y: number } | "center"; size?: number }
+  ) {
+    const position = options?.position ?? "center"
+    const size = options?.size ?? 24
+
+    return new Video(this.input, [
+      ...this.operations,
+      { type: "text", content, position, size },
     ])
   }
 
