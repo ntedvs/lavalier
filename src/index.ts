@@ -2,6 +2,7 @@ import { spawn } from "child_process"
 
 type Trim = { type: "trim"; start: number; end: number }
 type Resize = { type: "resize"; scale: number }
+type Speed = { type: "speed"; factor: number }
 
 type Crop = {
   type: "crop"
@@ -22,7 +23,7 @@ type Text = {
   end?: number
 }
 
-type Operation = Trim | Resize | Crop | Text
+type Operation = Trim | Resize | Crop | Text | Speed
 
 class Video {
   private input
@@ -113,6 +114,30 @@ class Video {
 
         video = v
         i += 1
+      } else if (o.type === "speed") {
+        const v = "v" + i
+        const a = "a" + i
+
+        filters.push(`[${video}]setpts=PTS/${o.factor}[${v}]`)
+
+        const chain = []
+        let remaining = o.factor
+
+        while (remaining > 2.0) {
+          chain.push("atempo=2.0")
+          remaining /= 2.0
+        }
+        while (remaining < 0.5) {
+          chain.push("atempo=0.5")
+          remaining /= 0.5
+        }
+
+        chain.push(`atempo=${remaining}`)
+        filters.push(`[${audio}]${chain.join(",")}[${a}]`)
+
+        video = v
+        audio = a
+        i += 1
       }
     }
 
@@ -158,6 +183,17 @@ class Video {
     return new Video(this.input, [
       ...this.operations,
       { type: "text", content, ...options },
+    ])
+  }
+
+  speed(factor: number) {
+    if (factor <= 0) {
+      throw new Error("Speed factor must be positive")
+    }
+
+    return new Video(this.input, [
+      ...this.operations,
+      { type: "speed", factor },
     ])
   }
 

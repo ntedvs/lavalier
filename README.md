@@ -82,6 +82,15 @@ Overlay text on the video.
 - `start`: Time in seconds when text should appear (optional)
 - `end`: Time in seconds when text should disappear (optional)
 
+### `.speed(factor: number)`
+
+Change playback speed. `2` = double speed, `0.5` = half speed (slow motion). Keeps audio in sync.
+
+```typescript
+.speed(2)   // 2x faster
+.speed(0.5) // slow motion
+```
+
 ### `.export(output: string)`
 
 Render the video with all operations applied. Returns a promise.
