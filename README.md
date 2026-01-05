@@ -91,6 +91,21 @@ Change playback speed. `2` = double speed, `0.5` = half speed (slow motion). Kee
 .speed(0.5) // slow motion
 ```
 
+### `.volume(factor: number)`
+
+Adjust audio volume.
+
+- `1.0` = original volume (no change)
+- `2.0` = double volume (increase by ~6dB)
+- `0.5` = half volume (decrease by ~6dB)
+- `0.0` = silence
+
+```typescript
+.volume(1.5)  // 50% louder
+.volume(0.75) // 25% quieter
+.volume(0)    // mute audio
+```
+
 ### `.export(output: string)`
 
 Render the video with all operations applied. Returns a promise.

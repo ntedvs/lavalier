@@ -3,6 +3,7 @@ import { spawn } from "child_process"
 type Trim = { type: "trim"; start: number; end: number }
 type Resize = { type: "resize"; scale: number }
 type Speed = { type: "speed"; factor: number }
+type Volume = { type: "volume"; factor: number }
 
 type Crop = {
   type: "crop"
@@ -23,7 +24,7 @@ type Text = {
   end?: number
 }
 
-type Operation = Trim | Resize | Crop | Text | Speed
+type Operation = Trim | Resize | Crop | Text | Speed | Volume
 
 class Video {
   private input
@@ -138,6 +139,13 @@ class Video {
         video = v
         audio = a
         i += 1
+      } else if (o.type === "volume") {
+        const a = "a" + i
+
+        filters.push(`[${audio}]volume=${o.factor}[${a}]`)
+
+        audio = a
+        i += 1
       }
     }
 
@@ -194,6 +202,23 @@ class Video {
     return new Video(this.input, [
       ...this.operations,
       { type: "speed", factor },
+    ])
+  }
+
+  volume(factor: number) {
+    if (factor < 0) {
+      throw new Error("Volume factor must be non-negative")
+    }
+    if (factor > 100) {
+      throw new Error("Volume factor must not exceed 100")
+    }
+    if (!isFinite(factor)) {
+      throw new Error("Volume factor must be a valid number")
+    }
+
+    return new Video(this.input, [
+      ...this.operations,
+      { type: "volume", factor },
     ])
   }
 
