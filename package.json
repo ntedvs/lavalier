@@ -1,24 +1,17 @@
 {
   "name": "lavalier",
-  "version": "0.0.6",
-  "description": "Simple video editing",
+  "version": "0.1.0",
+  "description": "A fluent, chainable API for programmatic video editing using FFmpeg",
   "keywords": [
+    "typescript",
     "video",
-    "editing",
-    "ffmpeg",
-    "typescript"
+    "ffmpeg"
   ],
   "homepage": "https://github.com/ntedvs/lavalier",
   "repository": "github:ntedvs/lavalier",
   "license": "MIT",
   "author": "Nathaniel Davis <nate@qstreet.org>",
   "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

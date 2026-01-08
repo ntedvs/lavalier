@@ -1,120 +1,224 @@
 # Lavalier
 
-Simple video editing in TypeScript.
+A fluent, chainable API for programmatic video editing using FFmpeg.
 
-## Install
+Lavalier provides a chainable API for video operations without dealing with FFmpeg command-line syntax. Chain operations together, call `.export()`, and it generates the filter graph for you.
+
+## Installation
 
 ```bash
 npm install lavalier
 ```
 
-**Important:** You need [FFmpeg](https://ffmpeg.org/) installed on your system. Lavalier is just a nice wrapper around it.
+Requires FFmpeg:
 
-## Usage
+```bash
+# macOS
+brew install ffmpeg
+
+# Ubuntu/Debian
+apt-get install ffmpeg
+
+# Windows (chocolatey)
+choco install ffmpeg
+```
+
+## Quick Start
 
 ```typescript
 import { video } from "lavalier"
 
-const clip = video("input.mp4")
-  .trim(5, 10) // keep seconds 5-10
-  .resize(0.5) // scale to 50%
-  .text("hello world", {
+// Edit a video with a fluent API
+await video("input.mp4")
+  .trim(0, 10) // First 10 seconds
+  .resize(0.5) // Half size
+  .text("Hello World", {
+    // Add text overlay
     position: "center",
-    size: 32,
-    color: "0xFF0000", // red text
-    start: 1, // appear at 1 second
-    end: 8, // disappear at 8 seconds
+    size: 48,
   })
-
-await clip.export("output.mp4")
+  .export("output.mp4")
 ```
-
-That's it. Chain operations, then export.
 
 ## API
 
-### `video(input: string)`
+### `video(inputPath: string)`
 
-Creates a new video editor instance.
+Creates a new video editing pipeline. Returns a `Video` instance with chainable methods.
 
 ### `.trim(start: number, end: number)`
 
-Trim video to a time range (in seconds). Keeps audio in sync.
+Trim the video to a specific time range in seconds.
+
+```typescript
+video("input.mp4")
+  .trim(5, 15) // Keep seconds 5-15
+  .export("trimmed.mp4")
+```
 
 ### `.resize(scale: number)`
 
-Scale video dimensions. `0.5` = half size, `2` = double size.
+Scale the video. `1.0` = original size, `0.5` = half size, `2.0` = double size.
 
-### `.crop(options)`
+```typescript
+video("input.mp4")
+  .resize(0.5) // 50% of original dimensions
+  .export("smaller.mp4")
+```
 
-Crop video to a specific region.
+Aspect ratio is preserved automatically.
 
-**Options:**
+### `.crop(width: number, height: number, options?: { x?: number, y?: number })`
 
-- `width`: Width of cropped area in pixels (required)
-- `height`: Height of cropped area in pixels (required)
-- `x`: X position of crop area (optional, defaults to center)
-- `y`: Y position of crop area (optional, defaults to center)
-
-**Examples:**
+Crop the video to specific dimensions. Defaults to center crop if `x` and `y` aren't specified.
 
 ```typescript
 // Center crop to 1920x1080
-.crop({ width: 1920, height: 1080 })
+video("input.mp4").crop(1920, 1080).export("cropped.mp4")
 
-// Crop from top-left corner
-.crop({ width: 640, height: 480, x: 0, y: 0 })
-
-// Custom position
-.crop({ width: 800, height: 600, x: 100, y: 50 })
+// Crop from specific position
+video("input.mp4").crop(1280, 720, { x: 100, y: 50 }).export("cropped.mp4")
 ```
-
-### `.text(content: string, options?)`
-
-Overlay text on the video.
-
-**Options:**
-
-- `position`: `{ x: number, y: number }` or `"center"` (optional)
-- `size`: Font size in pixels (optional)
-- `font`: Font name (optional)
-- `color`: Color in hexadecimal format, e.g., `"0xFF0000"` for red (optional)
-- `start`: Time in seconds when text should appear (optional)
-- `end`: Time in seconds when text should disappear (optional)
 
 ### `.speed(factor: number)`
 
-Change playback speed. `2` = double speed, `0.5` = half speed (slow motion). Keeps audio in sync.
+Adjust playback speed. `1.0` = normal, `0.5` = half speed (slow motion), `2.0` = double speed.
 
 ```typescript
-.speed(2)   // 2x faster
-.speed(0.5) // slow motion
+video("input.mp4")
+  .speed(2.0) // 2x speed
+  .export("fast.mp4")
 ```
+
+Adjusts both video and audio. Audio tempo is automatically chained for extreme speeds.
 
 ### `.volume(factor: number)`
 
-Adjust audio volume.
-
-- `1.0` = original volume (no change)
-- `2.0` = double volume (increase by ~6dB)
-- `0.5` = half volume (decrease by ~6dB)
-- `0.0` = silence
+Adjust audio volume. `1.0` = original, `0.5` = half volume, `2.0` = double volume.
 
 ```typescript
-.volume(1.5)  // 50% louder
-.volume(0.75) // 25% quieter
-.volume(0)    // mute audio
+video("input.mp4")
+  .volume(0.5) // Quieter
+  .export("quiet.mp4")
 ```
 
-### `.export(output: string)`
+### `.text(content: string, options?: TextOptions)`
 
-Render the video with all operations applied. Returns a promise.
+Add text overlay to the video.
+
+**Options:**
+
+- `position: { x: number, y: number } | 'center'` - Where to place the text
+- `size: number` - Font size in pixels
+- `font: string` - Font name (must be available on your system)
+- `color: string` - Text color (FFmpeg color format, e.g., 'white', 'black', '#FF0000')
+- `start: number` - When to show text (seconds)
+- `end: number` - When to hide text (seconds)
+
+```typescript
+// Centered text, whole video
+video("input.mp4")
+  .text("Hello World", {
+    position: "center",
+    size: 48,
+    color: "white",
+  })
+  .export("with-text.mp4")
+
+// Text at specific position and time range
+video("input.mp4")
+  .text("Chapter 1", {
+    position: { x: 50, y: 50 },
+    size: 36,
+    font: "Arial",
+    color: "yellow",
+    start: 0,
+    end: 5,
+  })
+  .export("with-timed-text.mp4")
+```
+
+### `.export(outputPath: string)`
+
+Renders the video to a file. Returns a Promise that resolves when encoding completes.
+
+## More Examples
+
+### Create a highlight reel
+
+```typescript
+// Trim, speed up, add branding
+await video("gameplay.mp4")
+  .trim(120, 180) // Best 60 seconds
+  .speed(1.5) // Slightly faster
+  .text("EPIC MOMENT", {
+    position: { x: 50, y: 50 },
+    size: 72,
+    color: "red",
+    start: 0,
+    end: 3,
+  })
+  .export("highlight.mp4")
+```
+
+### Make a social media clip
+
+```typescript
+// Square crop for Instagram, with caption
+await video("full-video.mp4")
+  .trim(10, 25) // 15-second clip
+  .crop(1080, 1080) // Square crop
+  .text("@yourhandle", {
+    position: { x: 20, y: 1040 },
+    size: 32,
+    color: "white",
+  })
+  .export("instagram.mp4")
+```
+
+### Batch process multiple videos
+
+```typescript
+const files = ["video1.mp4", "video2.mp4", "video3.mp4"]
+
+for (const file of files) {
+  await video(file).resize(0.5).volume(0.8).export(`processed-${file}`)
+}
+```
+
+### Chain everything together
+
+```typescript
+await video("raw-footage.mp4")
+  .trim(30, 90) // 1 minute
+  .crop(1920, 1080) // Standard HD
+  .resize(0.75) // Smaller file
+  .speed(1.25) // Slightly faster
+  .volume(1.5) // Louder
+  .text("Tutorial", {
+    position: "center",
+    size: 64,
+    color: "white",
+    start: 0,
+    end: 3,
+  })
+  .export("final.mp4")
+```
+
+## How it works
+
+Each operation adds to an FFmpeg filter graph. When you call `.export()`, Lavalier compiles the chain into a `-filter_complex` argument and spawns FFmpeg. Video/audio streams are tracked through labels so operations can be chained in any order.
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 18 or higher
 - FFmpeg installed and available in your PATH
+- TypeScript 5+ (if using TypeScript)
 
 ## License
 
 MIT
+
+## Contributing
+
+Issues and PRs welcome.
