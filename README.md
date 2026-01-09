@@ -102,6 +102,20 @@ video("input.mp4")
   .export("quiet.mp4")
 ```
 
+### `.flip(direction: "horizontal" | "vertical")`
+
+Mirror the video horizontally or vertically.
+
+```typescript
+video("input.mp4")
+  .flip("horizontal") // Mirror left-right
+  .export("mirrored.mp4")
+
+video("input.mp4")
+  .flip("vertical") // Mirror top-bottom
+  .export("flipped.mp4")
+```
+
 ### `.text(content: string, options?: TextOptions)`
 
 Add text overlay to the video.
@@ -195,6 +209,7 @@ await video("raw-footage.mp4")
   .resize(0.75) // Smaller file
   .speed(1.25) // Slightly faster
   .volume(1.5) // Louder
+  .flip("horizontal") // Mirror
   .text("Tutorial", {
     position: "center",
     size: 64,

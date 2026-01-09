@@ -46,6 +46,13 @@ class Video {
     ])
   }
 
+  flip(direction: "horizontal" | "vertical") {
+    return new Video(this.input, [
+      ...this.operations,
+      { type: "flip", direction },
+    ])
+  }
+
   text(
     content: string,
     options?: {
@@ -82,7 +89,19 @@ class Video {
     }
 
     args.push(output)
-    spawn("ffmpeg", args)
+
+    return new Promise<void>((resolve, reject) => {
+      const process = spawn("ffmpeg", args)
+
+      process.on("error", (error) => {
+        reject(new Error("Error"))
+      })
+
+      process.on("exit", (code) => {
+        if (code === 0) resolve()
+        else reject(new Error("Error"))
+      })
+    })
   }
 }
 

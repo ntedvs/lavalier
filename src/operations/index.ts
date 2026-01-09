@@ -1,12 +1,13 @@
 import { Labels } from "../labels"
 import { crop, Crop } from "./crop"
+import { flip, Flip } from "./flip"
 import { resize, Resize } from "./resize"
 import { speed, Speed } from "./speed"
 import { text, Text } from "./text"
 import { trim, Trim } from "./trim"
 import { volume, Volume } from "./volume"
 
-export type Operation = Trim | Resize | Crop | Speed | Volume | Text
+export type Operation = Trim | Resize | Crop | Speed | Volume | Text | Flip
 export type Context = { filters: string[]; labels: Labels }
 
 export function compile(operation: Operation, context: Context) {
@@ -23,5 +24,7 @@ export function compile(operation: Operation, context: Context) {
       return volume(operation, context)
     case "text":
       return text(operation, context)
+    case "flip":
+      return flip(operation, context)
   }
 }
