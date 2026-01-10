@@ -1,8 +1,8 @@
 # Lavalier
 
-A fluent, chainable API for programmatic video editing using FFmpeg.
+A fluent, chainable API for programmatic video and audio editing using FFmpeg.
 
-Lavalier provides a chainable API for video operations without dealing with FFmpeg command-line syntax. Chain operations together, call `.export()`, and it generates the filter graph for you.
+Lavalier wraps FFmpeg's filter_complex system in an intuitive, immutable interface. Chain operations together and export—Lavalier handles the FFmpeg command construction.
 
 ## Installation
 
@@ -10,14 +10,14 @@ Lavalier provides a chainable API for video operations without dealing with FFmp
 npm install lavalier
 ```
 
-Requires FFmpeg:
+**Prerequisites:** FFmpeg must be installed and available in your PATH.
 
 ```bash
 # macOS
 brew install ffmpeg
 
 # Ubuntu/Debian
-apt-get install ffmpeg
+sudo apt install ffmpeg
 
 # Windows (chocolatey)
 choco install ffmpeg
@@ -26,214 +26,287 @@ choco install ffmpeg
 ## Quick Start
 
 ```typescript
-import { video } from "lavalier"
+import { video, audio } from "lavalier"
 
-// Edit a video with a fluent API
+// Trim a video, speed it up, and add a watermark
 await video("input.mp4")
-  .trim(0, 10) // First 10 seconds
-  .resize(0.5) // Half size
-  .text("Hello World", {
-    // Add text overlay
-    position: "center",
-    size: 48,
-  })
+  .trim(5, 15)
+  .speed(1.5)
+  .text("© 2024", { position: { x: 10, y: 10 }, color: "white" })
   .export("output.mp4")
+
+// Extract and process audio
+await audio("podcast.mp3").trim(0, 60).volume(1.2).export("intro.mp3")
 ```
 
-## API
-
-### `video(inputPath: string)`
-
-Creates a new video editing pipeline. Returns a `Video` instance with chainable methods.
-
-### `.trim(start: number, end: number)`
-
-Trim the video to a specific time range in seconds.
+## Video API
 
 ```typescript
-video("input.mp4")
-  .trim(5, 15) // Keep seconds 5-15
-  .export("trimmed.mp4")
+import { video } from "lavalier"
 ```
 
-### `.resize(scale: number)`
+### trim(start, end)
 
-Scale the video. `1.0` = original size, `0.5` = half size, `2.0` = double size.
+Extract a segment from the video.
 
 ```typescript
-video("input.mp4")
-  .resize(0.5) // 50% of original dimensions
-  .export("smaller.mp4")
+// Extract from 10s to 30s
+video("input.mp4").trim(10, 30)
+
+// Get the first 5 seconds
+video("input.mp4").trim(0, 5)
 ```
 
-Aspect ratio is preserved automatically.
+| Parameter | Type     | Description           |
+| --------- | -------- | --------------------- |
+| `start`   | `number` | Start time in seconds |
+| `end`     | `number` | End time in seconds   |
 
-### `.crop(width: number, height: number, options?: { x?: number, y?: number })`
+### resize(scale)
 
-Crop the video to specific dimensions. Defaults to center crop if `x` and `y` aren't specified.
+Scale the video dimensions.
 
 ```typescript
-// Center crop to 1920x1080
-video("input.mp4").crop(1920, 1080).export("cropped.mp4")
+// Half size (50%)
+video("input.mp4").resize(0.5)
 
-// Crop from specific position
-video("input.mp4").crop(1280, 720, { x: 100, y: 50 }).export("cropped.mp4")
+// Double size (200%)
+video("input.mp4").resize(2)
+
+// Quarter size (25%)
+video("input.mp4").resize(0.25)
 ```
 
-### `.speed(factor: number)`
+| Parameter | Type     | Description                           |
+| --------- | -------- | ------------------------------------- |
+| `scale`   | `number` | Scale factor (0.5 = half, 2 = double) |
 
-Adjust playback speed. `1.0` = normal, `0.5` = half speed (slow motion), `2.0` = double speed.
+### crop(width, height, options?)
+
+Crop the video to specified dimensions.
 
 ```typescript
-video("input.mp4")
-  .speed(2.0) // 2x speed
-  .export("fast.mp4")
+// Crop to 1280x720 from top-left corner
+video("input.mp4").crop(1280, 720)
+
+// Crop to 500x500 at specific position
+video("input.mp4").crop(500, 500, { x: 100, y: 50 })
 ```
 
-Adjusts both video and audio. Audio tempo is automatically chained for extreme speeds.
+| Parameter   | Type     | Description                        |
+| ----------- | -------- | ---------------------------------- |
+| `width`     | `number` | Target width in pixels             |
+| `height`    | `number` | Target height in pixels            |
+| `options.x` | `number` | (Optional) X offset from left edge |
+| `options.y` | `number` | (Optional) Y offset from top edge  |
 
-### `.volume(factor: number)`
+### speed(factor)
 
-Adjust audio volume. `1.0` = original, `0.5` = half volume, `2.0` = double volume.
+Adjust playback speed. Affects both video and audio.
 
 ```typescript
-video("input.mp4")
-  .volume(0.5) // Quieter
-  .export("quiet.mp4")
+// 2x speed (video plays in half the time)
+video("input.mp4").speed(2)
+
+// Slow motion (0.5x)
+video("input.mp4").speed(0.5)
+
+// 1.5x speed
+video("input.mp4").speed(1.5)
 ```
 
-### `.flip(direction: "horizontal" | "vertical")`
+| Parameter | Type     | Description                                            |
+| --------- | -------- | ------------------------------------------------------ |
+| `factor`  | `number` | Speed multiplier (2 = twice as fast, 0.5 = half speed) |
 
-Mirror the video horizontally or vertically.
+### volume(factor)
+
+Adjust audio volume level.
 
 ```typescript
-video("input.mp4")
-  .flip("horizontal") // Mirror left-right
-  .export("mirrored.mp4")
+// Reduce to 50% volume
+video("input.mp4").volume(0.5)
 
-video("input.mp4")
-  .flip("vertical") // Mirror top-bottom
-  .export("flipped.mp4")
+// Boost to 150% volume
+video("input.mp4").volume(1.5)
+
+// Mute audio
+video("input.mp4").volume(0)
 ```
 
-### `.text(content: string, options?: TextOptions)`
+| Parameter | Type     | Description                                            |
+| --------- | -------- | ------------------------------------------------------ |
+| `factor`  | `number` | Volume multiplier (0 = mute, 1 = original, 2 = double) |
 
-Add text overlay to the video.
+### flip(direction)
 
-**Options:**
-
-- `position: { x: number, y: number } | 'center'` - Where to place the text
-- `size: number` - Font size in pixels
-- `font: string` - Font name (must be available on your system)
-- `color: string` - Text color (FFmpeg color format, e.g., 'white', 'black', '#FF0000')
-- `start: number` - When to show text (seconds)
-- `end: number` - When to hide text (seconds)
+Flip the video horizontally or vertically.
 
 ```typescript
-// Centered text, whole video
-video("input.mp4")
-  .text("Hello World", {
+// Mirror horizontally
+video("input.mp4").flip("horizontal")
+
+// Flip upside down
+video("input.mp4").flip("vertical")
+```
+
+| Parameter   | Type                         | Description    |
+| ----------- | ---------------------------- | -------------- |
+| `direction` | `"horizontal" \| "vertical"` | Flip direction |
+
+### text(content, options?)
+
+Overlay text on the video.
+
+```typescript
+// Simple text in default position
+video("input.mp4").text("Hello World")
+
+// Centered text with styling
+video("input.mp4").text("Subscribe!", {
+  position: "center",
+  size: 48,
+  color: "yellow",
+  font: "Arial",
+})
+
+// Positioned text with timing
+video("input.mp4").text("Intro", {
+  position: { x: 50, y: 50 },
+  size: 32,
+  color: "white",
+  start: 0,
+  end: 5,
+})
+```
+
+| Parameter          | Type                                   | Description                            |
+| ------------------ | -------------------------------------- | -------------------------------------- |
+| `content`          | `string`                               | Text to display                        |
+| `options.position` | `{ x: number, y: number } \| "center"` | (Optional) Text position               |
+| `options.size`     | `number`                               | (Optional) Font size in pixels         |
+| `options.font`     | `string`                               | (Optional) Font family name            |
+| `options.color`    | `string`                               | (Optional) Text color                  |
+| `options.start`    | `number`                               | (Optional) When to show text (seconds) |
+| `options.end`      | `number`                               | (Optional) When to hide text (seconds) |
+
+### export(output)
+
+Render the video with all applied operations.
+
+```typescript
+await video("input.mp4").trim(0, 10).resize(0.5).export("output.mp4")
+```
+
+| Parameter | Type     | Description      |
+| --------- | -------- | ---------------- |
+| `output`  | `string` | Output file path |
+
+**Returns:** `Promise<void>` - Resolves when export completes, rejects on error.
+
+## Audio API
+
+```typescript
+import { audio } from "lavalier"
+```
+
+### trim(start, end)
+
+Extract a segment from the audio.
+
+```typescript
+// Extract from 0s to 60s
+audio("podcast.mp3").trim(0, 60)
+```
+
+| Parameter | Type     | Description           |
+| --------- | -------- | --------------------- |
+| `start`   | `number` | Start time in seconds |
+| `end`     | `number` | End time in seconds   |
+
+### speed(factor)
+
+Adjust playback speed.
+
+```typescript
+// Speed up to 1.25x
+audio("audiobook.mp3").speed(1.25)
+
+// Slow down to 0.75x
+audio("lecture.mp3").speed(0.75)
+```
+
+| Parameter | Type     | Description      |
+| --------- | -------- | ---------------- |
+| `factor`  | `number` | Speed multiplier |
+
+### volume(factor)
+
+Adjust volume level.
+
+```typescript
+// Normalize quiet audio
+audio("quiet.mp3").volume(2)
+
+// Reduce loud audio
+audio("loud.mp3").volume(0.5)
+```
+
+| Parameter | Type     | Description       |
+| --------- | -------- | ----------------- |
+| `factor`  | `number` | Volume multiplier |
+
+### export(output)
+
+Render the audio with all applied operations.
+
+```typescript
+await audio("input.mp3").trim(0, 30).volume(1.2).export("output.mp3")
+```
+
+| Parameter | Type     | Description      |
+| --------- | -------- | ---------------- |
+| `output`  | `string` | Output file path |
+
+**Returns:** `Promise<void>` - Resolves when export completes, rejects on error.
+
+## Chaining Operations
+
+Operations can be chained in any order. Each method returns a new immutable instance.
+
+```typescript
+// Complex video processing pipeline
+await video("raw-footage.mp4")
+  .trim(30, 90) // Extract 1 minute starting at 30s
+  .crop(1920, 1080) // Crop to 1080p
+  .resize(0.5) // Scale down to 960x540
+  .speed(1.25) // Speed up slightly
+  .volume(0.8) // Reduce audio slightly
+  .flip("horizontal") // Mirror the video
+  .text("PREVIEW", {
+    // Add watermark
     position: "center",
-    size: 48,
-    color: "white",
-  })
-  .export("with-text.mp4")
-
-// Text at specific position and time range
-video("input.mp4")
-  .text("Chapter 1", {
-    position: { x: 50, y: 50 },
-    size: 36,
-    font: "Arial",
-    color: "yellow",
-    start: 0,
-    end: 5,
-  })
-  .export("with-timed-text.mp4")
-```
-
-### `.export(outputPath: string)`
-
-Renders the video to a file. Returns a Promise that resolves when encoding completes.
-
-## More Examples
-
-### Create a highlight reel
-
-```typescript
-// Trim, speed up, add branding
-await video("gameplay.mp4")
-  .trim(120, 180) // Best 60 seconds
-  .speed(1.5) // Slightly faster
-  .text("EPIC MOMENT", {
-    position: { x: 50, y: 50 },
     size: 72,
     color: "red",
-    start: 0,
-    end: 3,
   })
-  .export("highlight.mp4")
+  .export("preview.mp4")
 ```
 
-### Make a social media clip
+Since each operation returns a new instance, you can create branches:
 
 ```typescript
-// Square crop for Instagram, with caption
-await video("full-video.mp4")
-  .trim(10, 25) // 15-second clip
-  .crop(1080, 1080) // Square crop
-  .text("@yourhandle", {
-    position: { x: 20, y: 1040 },
-    size: 32,
-    color: "white",
-  })
-  .export("instagram.mp4")
+const base = video("input.mp4").trim(0, 10)
+
+// Create multiple outputs from the same base
+await base.resize(0.5).export("small.mp4")
+await base.resize(2).export("large.mp4")
 ```
-
-### Batch process multiple videos
-
-```typescript
-const files = ["video1.mp4", "video2.mp4", "video3.mp4"]
-
-for (const file of files) {
-  await video(file).resize(0.5).volume(0.8).export(`processed-${file}`)
-}
-```
-
-### Chain everything together
-
-```typescript
-await video("raw-footage.mp4")
-  .trim(30, 90) // 1 minute
-  .crop(1920, 1080) // Standard HD
-  .resize(0.75) // Smaller file
-  .speed(1.25) // Slightly faster
-  .volume(1.5) // Louder
-  .flip("horizontal") // Mirror
-  .text("Tutorial", {
-    position: "center",
-    size: 64,
-    color: "white",
-    start: 0,
-    end: 3,
-  })
-  .export("final.mp4")
-```
-
-## How it works
-
-Each operation adds to an FFmpeg filter graph. When you call `.export()`, Lavalier compiles the chain into a `-filter_complex` argument and spawns FFmpeg. Video/audio streams are tracked through labels so operations can be chained in any order.
 
 ## Requirements
 
-- Node.js 18 or higher
-- FFmpeg installed and available in your PATH
-- TypeScript 5+ (if using TypeScript)
+- Node.js 18+
+- FFmpeg installed and available in PATH
 
 ## License
 
 MIT
-
-## Contributing
-
-Issues and PRs welcome.

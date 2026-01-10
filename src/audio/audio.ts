@@ -2,7 +2,7 @@ import { spawn } from "child_process"
 import { Labels } from "./labels"
 import { compile, Operation } from "./operations"
 
-class Video {
+class Audio {
   private input
   private operations
 
@@ -12,61 +12,23 @@ class Video {
   }
 
   trim(start: number, end: number) {
-    return new Video(this.input, [
+    return new Audio(this.input, [
       ...this.operations,
       { type: "trim", start, end },
     ])
   }
 
-  resize(scale: number) {
-    return new Video(this.input, [
-      ...this.operations,
-      { type: "resize", scale },
-    ])
-  }
-
-  crop(width: number, height: number, options?: { x?: number; y?: number }) {
-    return new Video(this.input, [
-      ...this.operations,
-      { type: "crop", width, height, ...options },
-    ])
-  }
-
   speed(factor: number) {
-    return new Video(this.input, [
+    return new Audio(this.input, [
       ...this.operations,
       { type: "speed", factor },
     ])
   }
 
   volume(factor: number) {
-    return new Video(this.input, [
+    return new Audio(this.input, [
       ...this.operations,
       { type: "volume", factor },
-    ])
-  }
-
-  flip(direction: "horizontal" | "vertical") {
-    return new Video(this.input, [
-      ...this.operations,
-      { type: "flip", direction },
-    ])
-  }
-
-  text(
-    content: string,
-    options?: {
-      position?: { x: number; y: number } | "center"
-      size?: number
-      font?: string
-      color?: string
-      start?: number
-      end?: number
-    }
-  ) {
-    return new Video(this.input, [
-      ...this.operations,
-      { type: "text", content, ...options },
     ])
   }
 
@@ -84,11 +46,10 @@ class Video {
     const complex = filters.join(";")
     if (complex.length) {
       args.push("-filter_complex", complex)
-
-      args.push("-map", labels.video === "0:v" ? "0:v" : `[${labels.video}]`)
-      args.push("-map", labels.audio === "0:a" ? "0:a" : `[${labels.audio}]`)
+      args.push("-map", `[${labels.audio}]`)
     }
 
+    args.push("-vn")
     args.push(output)
 
     return new Promise<void>((resolve, reject) => {
@@ -106,6 +67,6 @@ class Video {
   }
 }
 
-export function video(input: string) {
-  return new Video(input)
+export function audio(input: string) {
+  return new Audio(input)
 }
