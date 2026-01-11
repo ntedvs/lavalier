@@ -1,22 +1,18 @@
-import { Context } from "."
-
 export type Trim = {
   type: "trim"
-  start: number
-  end: number
+  options: { start: number; end?: number } | { start?: number; end: number }
 }
 
-export function trim(operation: Trim, context: Context) {
-  const { filters, labels } = context
-  const { video, audio } = labels.allocate(["video", "audio"])
+export function trim({ options }: Trim) {
+  const parts = []
 
-  filters.push(
-    `[${labels.video}]trim=start=${operation.start}:end=${operation.end},setpts=PTS-STARTPTS[${video}]`
-  )
-  filters.push(
-    `[${labels.audio}]atrim=start=${operation.start}:end=${operation.end},asetpts=PTS-STARTPTS[${audio}]`
-  )
+  if (options.start !== undefined) parts.push(`start=${options.start}`)
+  if (options.end !== undefined) parts.push(`end=${options.end}`)
 
-  labels.video = video
-  labels.audio = audio
+  const params = parts.join(":")
+
+  return {
+    video: `trim=${params},setpts=PTS-STARTPTS`,
+    audio: `atrim=${params},asetpts=PTS-STARTPTS`,
+  }
 }

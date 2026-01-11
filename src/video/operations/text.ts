@@ -1,55 +1,53 @@
-import { Context } from "."
-
 export type Text = {
   type: "text"
   content: string
-  position?: { x: number; y: number } | "center"
-  size?: number
-  font?: string
-  color?: string
-  start?: number
-  end?: number
+  options?: {
+    position?:
+      | ({ x: number; y?: number } | { x?: number; y: number })
+      | "center"
+    size?: number
+    font?: string
+    color?: string
+    start?: number
+    end?: number
+  }
 }
 
-export function text(operation: Text, context: Context) {
-  const { filters, labels } = context
-  const { video } = labels.allocate(["video"])
-
+export function text({ content, options = {} }: Text) {
   const parts = []
 
-  const escaped = operation.content
+  const escaped = content
     .replace(/\\/g, "\\\\")
     .replace(/'/g, "\\'")
     .replace(/:/g, "\\:")
   parts.push(`text='${escaped}'`)
 
-  if (operation.position) {
+  if (options.position) {
     const calculations = { center: "x=(w-text_w)/2:y=(h-text_h)/2" }
 
-    parts.push(
-      typeof operation.position === "string"
-        ? calculations[operation.position]
-        : `x=${operation.position.x}:y=${operation.position.y}`
-    )
+    if (typeof options.position === "string") {
+      parts.push(calculations[options.position])
+    } else {
+      if (options.position.x) parts.push(`x=${options.position.x}`)
+      if (options.position.y) parts.push(`y=${options.position.y}`)
+    }
   }
 
-  if (operation.size !== undefined) parts.push(`fontsize=${operation.size}`)
-  if (operation.font) parts.push(`font=${operation.font}`)
-  if (operation.color) parts.push(`fontcolor=${operation.color}`)
+  if (options.size !== undefined) parts.push(`fontsize=${options.size}`)
+  if (options.font) parts.push(`font=${options.font}`)
+  if (options.color) parts.push(`fontcolor=${options.color}`)
 
-  if (operation.start !== undefined || operation.end !== undefined) {
-    let enable = `between(t,${operation.start},${operation.end})`
+  if (options.start !== undefined || options.end !== undefined) {
+    let enable = `between(t,${options.start},${options.end})`
 
-    if (operation.start === undefined) {
-      enable = `lte(t,${operation.end})`
-    } else if (operation.end === undefined) {
-      enable = `gte(t,${operation.start})`
+    if (options.start === undefined) {
+      enable = `lte(t,${options.end})`
+    } else if (options.end === undefined) {
+      enable = `gte(t,${options.start})`
     }
 
     parts.push(`enable='${enable}'`)
   }
 
-  filters.push(`[${labels.video}]drawtext=${parts.join(":")}[${video}]`)
-
-  labels.video = video
+  return { video: `drawtext=${parts.join(":")}` }
 }

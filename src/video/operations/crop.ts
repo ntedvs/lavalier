@@ -1,25 +1,23 @@
-import { Context } from "."
-
 export type Crop = {
   type: "crop"
-  width: number
-  height: number
-  x?: number
-  y?: number
+  options:
+    | { width: number; x?: number; height?: never; y?: never }
+    | { height: number; y?: number; width?: never; x?: never }
+    | { width: number; height: number; x?: number; y?: number }
 }
 
-export function crop(operation: Crop, context: Context) {
-  const { filters, labels } = context
-  const { video } = labels.allocate(["video"])
+export function crop({ options }: Crop) {
+  const width = options.width ?? "iw"
+  const height = options.height ?? "ih"
 
-  const x =
-    operation.x !== undefined ? operation.x : `(iw-${operation.width})/2`
-  const y =
-    operation.y !== undefined ? operation.y : `(ih-${operation.height})/2`
+  let video = `crop=${width}:${height}`
 
-  filters.push(
-    `[${labels.video}]crop=${operation.width}:${operation.height}:${x}:${y}[${video}]`
-  )
+  if (options.x !== undefined || options.y !== undefined) {
+    const x = options.x ?? 0
+    const y = options.y ?? 0
 
-  labels.video = video
+    video += `:${x}:${y}`
+  }
+
+  return { video }
 }
