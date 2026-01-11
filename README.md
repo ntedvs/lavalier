@@ -1,9 +1,9 @@
 # Lavalier
 
-Fluent, chainable API for video editing with FFmpeg.
+Fluent, chainable API for video and audio editing with FFmpeg.
 
 ```typescript
-import { video } from "lavalier"
+import { video, audio } from "lavalier"
 
 await video("input.mp4")
   .trim({ start: 5, end: 15 })
@@ -11,6 +11,12 @@ await video("input.mp4")
   .flip("horizontal")
   .text("Subscribe!", { position: "center", size: 64, color: "yellow" })
   .export("output.mp4")
+
+await audio("input.mp4")
+  .trim({ start: 0, end: 30 })
+  .speed(1.25)
+  .volume(0.8)
+  .export("output.mp3")
 ```
 
 ## Installation
@@ -42,11 +48,27 @@ Renders the video with all applied operations. Returns a `Promise<void>` that re
 await video("input.mp4").speed(2).export("output.mp4")
 ```
 
+### `audio(input)`
+
+Creates a new audio instance from an input file path. Returns a chainable `Audio` object.
+
+```typescript
+const a = audio("path/to/audio.mp3")
+```
+
+### `.export(output)` (Audio)
+
+Renders the audio with all applied operations. Returns a `Promise<void>` that resolves when encoding completes.
+
+```typescript
+await audio("input.mp3").speed(1.5).export("output.mp3")
+```
+
 ---
 
-## Operations
+## Video Operations
 
-All operations are chainable and return a new `Video` instance. Operations are applied in the order they are called.
+All video operations are chainable and return a new `Video` instance. Operations are applied in the order they are called.
 
 ### `.trim(options)`
 
@@ -235,7 +257,7 @@ video("input.mp4").text("Subscribe", {
 
 ---
 
-## Chaining Operations
+## Chaining Video Operations
 
 Operations can be chained in any order. Each operation returns a new immutable `Video` instance.
 
@@ -255,6 +277,70 @@ await video("raw-footage.mp4")
     end: 3,
   })
   .export("final.mp4")
+```
+
+---
+
+## Audio Operations
+
+All audio operations are chainable and return a new `Audio` instance. Operations are applied in the order they are called.
+
+### `.trim(options)`
+
+Trims the audio to a specific time range. Times are in seconds.
+
+**Options:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `start` | `number` | Start time in seconds |
+| `end` | `number` | End time in seconds |
+
+At least one of `start` or `end` must be provided.
+
+```typescript
+audio("input.mp3").trim({ start: 5, end: 30 })
+```
+
+---
+
+### `.speed(factor)`
+
+Adjusts playback speed. Audio pitch is preserved.
+
+**Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `factor` | `number` | Speed multiplier (e.g., `2` = 2x faster, `0.5` = half speed) |
+
+```typescript
+audio("input.mp3").speed(1.5)
+```
+
+---
+
+### `.volume(level)`
+
+Adjusts audio volume level.
+
+**Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `level` | `number` | Volume multiplier (e.g., `1` = unchanged, `0.5` = 50%, `2` = 200%) |
+
+```typescript
+audio("input.mp3").volume(0.8)
+```
+
+---
+
+## Chaining Audio Operations
+
+```typescript
+await audio("podcast.mp3")
+  .trim({ start: 60, end: 3600 })
+  .speed(1.25)
+  .volume(1.5)
+  .export("edited.mp3")
 ```
 
 ## License

@@ -1,6 +1,6 @@
 {
   "name": "lavalier",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A fluent, chainable API for programmatic video editing using FFmpeg",
   "keywords": [
     "typescript",
