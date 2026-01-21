@@ -1,7 +1,7 @@
 {
   "name": "lavalier",
-  "version": "0.4.1",
-  "description": "A fluent, chainable API for programmatic video editing using FFmpeg",
+  "version": "0.5.0",
+  "description": "A fluent, chainable API for programmatic video and audio editing using FFmpeg",
   "keywords": [
     "typescript",
     "video",
@@ -22,7 +22,7 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@types/node": "^25.0.6",
+    "@types/node": "^25.0.9",
     "typescript": "^5.9.3"
   },
   "engines": {

@@ -3,7 +3,8 @@ import { speed, Speed } from "./operations/speed"
 import { trim, Trim } from "./operations/trim"
 import { volume, Volume } from "./operations/volume"
 
-type Operation = Trim | Speed | Volume
+type Concat = { type: "concat"; audio: Audio }
+type Operation = Trim | Speed | Volume | Concat
 
 class Audio {
   private input
@@ -35,22 +36,64 @@ class Audio {
     ])
   }
 
+  concat(audio: Concat["audio"]) {
+    return new Audio(this.input, [
+      ...this.operations,
+      { type: "concat", audio },
+    ])
+  }
+
   export(output: string) {
-    const a = []
+    const audios: Audio[] = []
+    const filters: string[] = []
 
-    for (const operation of this.operations) {
-      a.push(run(operation))
+    const compile = (audio: Audio) => {
+      let index = audios.indexOf(audio)
+      if (index === -1) {
+        index = audios.length
+        audios.push(audio)
+      }
+
+      let aud = `${index}:a`
+
+      const handlers = { volume, trim, speed }
+
+      for (const operation of audio.operations) {
+        if (operation.type === "concat") {
+          const out = compile(operation.audio)
+          const nextAud = `a${filters.length}`
+
+          filters.push(`[${aud}][${out}]concat=n=2:v=0:a=1[${nextAud}]`)
+
+          aud = nextAud
+        } else {
+          const result = handlers[operation.type](operation as any)
+
+          const next = `a${filters.length}`
+          filters.push(`[${aud}]${result}[${next}]`)
+          aud = next
+        }
+      }
+
+      return aud
     }
 
+    const final = compile(this)
     const args = ["-y"]
-    args.push("-i", this.input)
 
-    if (a.length) {
-      args.push("-filter_complex", `[0:a]${a.join(",")}[a0]`)
-      args.push("-map", "[a0]")
+    for (const audio of audios) {
+      args.push("-i", audio.input)
     }
 
-    args.push("-vn")
+    if (filters.length) {
+      args.push("-filter_complex", filters.join(";"))
+
+      const map = (stream: string) =>
+        stream.includes(":") ? stream : `[${stream}]`
+
+      args.push("-map", map(final))
+    }
+
     args.push(output)
 
     return new Promise<void>((resolve, reject) => {
@@ -65,17 +108,6 @@ class Audio {
         else reject(new Error("Error"))
       })
     })
-  }
-}
-
-function run(operation: Operation) {
-  switch (operation.type) {
-    case "trim":
-      return trim(operation)
-    case "speed":
-      return speed(operation)
-    case "volume":
-      return volume(operation)
   }
 }
 

@@ -17,5 +17,5 @@ export function speed({ factor }: Speed) {
   }
 
   chain.push(`atempo=${remaining}`)
-  return `${chain.join(",")}`
+  return chain.join(",")
 }

@@ -1,347 +1,141 @@
 # Lavalier
 
-Fluent, chainable API for video and audio editing with FFmpeg.
+A fluent, chainable API for programmatic video and audio editing using FFmpeg.
+
+## Installation
+
+```bash
+bun add lavalier
+```
+
+## Requirements
+
+[FFmpeg](https://ffmpeg.org/) must be installed and available in PATH.
+
+## Usage
 
 ```typescript
 import { video, audio } from "lavalier"
 
 await video("input.mp4")
   .trim({ start: 5, end: 15 })
-  .speed(1.5)
+  .speed(2)
   .flip("horizontal")
-  .text("Subscribe!", { position: "center", size: 64, color: "yellow" })
+  .text("Hello World", { position: "center", size: 48 })
   .export("output.mp4")
 
-await audio("input.mp4")
-  .trim({ start: 0, end: 30 })
-  .speed(1.25)
+await audio("input.mp3")
+  .trim({ start: 10, end: 30 })
+  .speed(1.5)
   .volume(0.8)
   .export("output.mp3")
 ```
 
-## Installation
-
-```bash
-npm install lavalier
-```
-
-**Requirements:**
-
-- Node.js 18+
-- FFmpeg installed and available in PATH
-
 ## API
 
-### `video(input)`
+### `video(input: string)`
 
-Creates a new video instance from an input file path. Returns a chainable `Video` object.
+Create a new video instance from an input file path.
 
-```typescript
-const v = video("path/to/video.mp4")
-```
+### `audio(input: string)`
 
-### `.export(output)`
-
-Renders the video with all applied operations. Returns a `Promise<void>` that resolves when encoding completes.
-
-```typescript
-await video("input.mp4").speed(2).export("output.mp4")
-```
-
-### `audio(input)`
-
-Creates a new audio instance from an input file path. Returns a chainable `Audio` object.
-
-```typescript
-const a = audio("path/to/audio.mp3")
-```
-
-### `.export(output)` (Audio)
-
-Renders the audio with all applied operations. Returns a `Promise<void>` that resolves when encoding completes.
-
-```typescript
-await audio("input.mp3").speed(1.5).export("output.mp3")
-```
-
----
-
-## Video Operations
-
-All video operations are chainable and return a new `Video` instance. Operations are applied in the order they are called.
-
-### `.trim(options)`
-
-Trims the video to a specific time range. Times are in seconds.
-
-**Options:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `start` | `number` | Start time in seconds |
-| `end` | `number` | End time in seconds |
-
-At least one of `start` or `end` must be provided.
-
-```typescript
-// Keep first 10 seconds
-video("input.mp4").trim({ end: 10 })
-
-// Start at 5 seconds
-video("input.mp4").trim({ start: 5 })
-
-// Extract 5-15 second range
-video("input.mp4").trim({ start: 5, end: 15 })
-```
-
----
-
-### `.speed(factor)`
-
-Adjusts playback speed for both video and audio. Audio pitch is preserved.
-
-**Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `factor` | `number` | Speed multiplier (e.g., `2` = 2x faster, `0.5` = half speed) |
-
-```typescript
-// Double speed
-video("input.mp4").speed(2)
-
-// Slow motion (half speed)
-video("input.mp4").speed(0.5)
-
-// Slight speedup
-video("input.mp4").speed(1.25)
-```
-
----
-
-### `.volume(level)`
-
-Adjusts audio volume level.
-
-**Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `level` | `number` | Volume multiplier (e.g., `1` = unchanged, `0.5` = 50%, `2` = 200%) |
-
-```typescript
-// Reduce volume to 50%
-video("input.mp4").volume(0.5)
-
-// Double the volume
-video("input.mp4").volume(2)
-
-// Mute audio
-video("input.mp4").volume(0)
-```
-
----
-
-### `.flip(direction)`
-
-Flips the video horizontally or vertically.
-
-**Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `direction` | `"horizontal" \| "vertical"` | Flip direction |
-
-```typescript
-// Mirror horizontally
-video("input.mp4").flip("horizontal")
-
-// Flip upside down
-video("input.mp4").flip("vertical")
-```
-
----
+Create a new audio instance from an input file path. Supports `.trim()`, `.speed()`, `.volume()`, `.concat()`, and `.export()`.
 
 ### `.crop(options)`
 
-Crops the video to specified dimensions. Omitted dimensions default to the original size.
-
-**Options:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `width` | `number` | Target width in pixels |
-| `height` | `number` | Target height in pixels |
-| `x` | `number` | Horizontal offset from left edge (default: `0`) |
-| `y` | `number` | Vertical offset from top edge (default: `0`) |
-
-At least one of `width` or `height` must be provided. If specifying both dimensions, `x` and `y` can optionally position the crop area.
+Crop video dimensions.
 
 ```typescript
-// Crop to 1280x720 from top-left
-video("input.mp4").crop({ width: 1280, height: 720 })
+// Crop width only
+.crop({ width: 1920 })
 
-// Crop width only, keep full height
-video("input.mp4").crop({ width: 1000 })
+// Crop height only
+.crop({ height: 1080 })
 
-// Crop with offset (extract center region)
-video("input.mp4").crop({ width: 640, height: 480, x: 320, y: 240 })
+// Crop both with position
+.crop({ width: 1920, height: 1080, x: 100, y: 50 })
 ```
 
----
+### `.flip(direction)`
+
+Flip video horizontally or vertically.
+
+```typescript
+.flip("horizontal")
+.flip("vertical")
+```
 
 ### `.scale(factor)`
 
-Scales the video dimensions by a factor.
-
-**Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `factor` | `number` | Scale multiplier (e.g., `0.5` = half size, `2` = double size) |
+Scale video by a factor.
 
 ```typescript
-// Half the resolution
-video("input.mp4").scale(0.5)
-
-// Double the resolution
-video("input.mp4").scale(2)
+.scale(0.5)  // 50% size
+.scale(2)    // 200% size
 ```
-
----
-
-### `.text(content, options?)`
-
-Adds a text overlay to the video.
-
-**Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `content` | `string` | Text to display |
-| `options` | `object` | Optional styling and positioning |
-
-**Options:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `position` | `{ x?: number, y?: number } \| "center"` | Position in pixels or centered |
-| `size` | `number` | Font size in pixels |
-| `font` | `string` | Font family name |
-| `color` | `string` | Font color (name or hex) |
-| `start` | `number` | Show text starting at this time (seconds) |
-| `end` | `number` | Hide text after this time (seconds) |
-
-```typescript
-// Centered white text
-video("input.mp4").text("Hello World", {
-  position: "center",
-  size: 48,
-  color: "white",
-})
-
-// Positioned text with custom font
-video("input.mp4").text("Watermark", {
-  position: { x: 20, y: 20 },
-  size: 24,
-  font: "Arial",
-  color: "#ff0000",
-})
-
-// Text that appears from 5-10 seconds
-video("input.mp4").text("Limited Time!", {
-  position: "center",
-  size: 36,
-  start: 5,
-  end: 10,
-})
-
-// Text that appears after 3 seconds
-video("input.mp4").text("Subscribe", {
-  position: { x: 100, y: 50 },
-  start: 3,
-})
-```
-
----
-
-## Chaining Video Operations
-
-Operations can be chained in any order. Each operation returns a new immutable `Video` instance.
-
-```typescript
-await video("raw-footage.mp4")
-  .trim({ start: 10, end: 60 }) // Extract 50 second clip
-  .speed(1.5) // Speed up 1.5x
-  .volume(0.8) // Reduce volume slightly
-  .scale(0.5) // Half the resolution
-  .crop({ width: 640, height: 640 }) // Square crop
-  .flip("horizontal") // Mirror
-  .text("My Video", {
-    // Add title
-    position: "center",
-    size: 32,
-    color: "white",
-    end: 3,
-  })
-  .export("final.mp4")
-```
-
----
-
-## Audio Operations
-
-All audio operations are chainable and return a new `Audio` instance. Operations are applied in the order they are called.
-
-### `.trim(options)`
-
-Trims the audio to a specific time range. Times are in seconds.
-
-**Options:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `start` | `number` | Start time in seconds |
-| `end` | `number` | End time in seconds |
-
-At least one of `start` or `end` must be provided.
-
-```typescript
-audio("input.mp3").trim({ start: 5, end: 30 })
-```
-
----
 
 ### `.speed(factor)`
 
-Adjusts playback speed. Audio pitch is preserved.
-
-**Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `factor` | `number` | Speed multiplier (e.g., `2` = 2x faster, `0.5` = half speed) |
+Change playback speed. For video, affects both video and audio streams.
 
 ```typescript
-audio("input.mp3").speed(1.5)
+.speed(2)    // 2x faster
+.speed(0.5)  // 2x slower
 ```
 
----
+### `.text(content, options?)`
+
+Overlay text on video.
+
+```typescript
+.text("Hello World")
+
+.text("Hello World", {
+  position: "center",           // or { x: 100, y: 50 }
+  size: 48,
+  font: "Arial",
+  color: "white",
+  start: 2,                     // seconds
+  end: 10
+})
+```
+
+### `.trim(options)`
+
+Trim duration.
+
+```typescript
+.trim({ start: 5, end: 15 })  // seconds
+.trim({ start: 5 })            // from 5s to end
+.trim({ end: 10 })             // from start to 10s
+```
 
 ### `.volume(level)`
 
-Adjusts audio volume level.
-
-**Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `level` | `number` | Volume multiplier (e.g., `1` = unchanged, `0.5` = 50%, `2` = 200%) |
+Adjust audio volume.
 
 ```typescript
-audio("input.mp3").volume(0.8)
+.volume(0.5)  // 50% volume
+.volume(2)    // 200% volume
 ```
 
----
+### `.concat(video|audio)`
 
-## Chaining Audio Operations
+Concatenate another video or audio instance.
 
 ```typescript
-await audio("podcast.mp3")
-  .trim({ start: 60, end: 3600 })
-  .speed(1.25)
-  .volume(1.5)
-  .export("edited.mp3")
+const intro = video("intro.mp4")
+const main = video("main.mp4")
+await main.concat(intro).export("output.mp4")
+
+const a1 = audio("a.mp3")
+const a2 = audio("b.mp3")
+await a1.concat(a2).export("combined.mp3")
 ```
+
+### `.export(output: string)`
+
+Execute the operation chain and export to output file. Returns a Promise.
 
 ## License
 

@@ -7,7 +7,8 @@ import { text, Text } from "./operations/text"
 import { trim, Trim } from "./operations/trim"
 import { volume, Volume } from "./operations/volume"
 
-type Operation = Volume | Trim | Speed | Flip | Crop | Scale | Text
+type Concat = { type: "concat"; video: Video }
+type Operation = Volume | Trim | Speed | Flip | Crop | Scale | Text | Concat
 
 class Video {
   private input
@@ -67,33 +68,79 @@ class Video {
     ])
   }
 
+  concat(video: Concat["video"]) {
+    return new Video(this.input, [
+      ...this.operations,
+      { type: "concat", video },
+    ])
+  }
+
   export(output: string) {
-    const v = []
-    const a = []
+    const videos: Video[] = []
+    const filters: string[] = []
+    let counter = 0
 
-    for (const operation of this.operations) {
-      const output = run(operation)
+    const compile = (video: Video) => {
+      let index = videos.indexOf(video)
+      if (index === -1) {
+        index = videos.length
+        videos.push(video)
+      }
 
-      if ("video" in output) v.push(output.video)
-      if ("audio" in output) a.push(output.audio)
+      let vid = `${index}:v`
+      let aud = `${index}:a`
+
+      const handlers = { volume, trim, flip, crop, speed, scale, text }
+
+      for (const operation of video.operations) {
+        if (operation.type === "concat") {
+          const out = compile(operation.video)
+          const nextVid = `v${counter++}`
+          const nextAud = `a${counter++}`
+
+          filters.push(
+            `[${vid}][${aud}][${out.video}][${out.audio}]concat=n=2:v=1:a=1[${nextVid}][${nextAud}]`,
+          )
+
+          vid = nextVid
+          aud = nextAud
+        } else {
+          const result = handlers[operation.type](operation as any)
+
+          if ("video" in result) {
+            const next = `v${counter++}`
+            filters.push(`[${vid}]${result.video}[${next}]`)
+            vid = next
+          }
+
+          if ("audio" in result) {
+            const next = `a${counter++}`
+            filters.push(`[${aud}]${result.audio}[${next}]`)
+            aud = next
+          }
+        }
+      }
+
+      return { video: vid, audio: aud }
     }
 
+    const final = compile(this)
     const args = ["-y"]
-    const sides = []
 
-    args.push("-i", this.input)
-
-    if (v.length) {
-      sides.push(`[0:v]${v.join(",")}[v0]`)
-      args.push("-map", "[v0]")
+    for (const video of videos) {
+      args.push("-i", video.input)
     }
 
-    if (a.length) {
-      sides.push(`[0:a]${a.join(",")}[a0]`)
-      args.push("-map", "[a0]")
+    if (filters.length) {
+      args.push("-filter_complex", filters.join(";"))
+
+      const map = (stream: string) =>
+        stream.includes(":") ? stream : `[${stream}]`
+
+      args.push("-map", map(final.video))
+      args.push("-map", map(final.audio))
     }
 
-    args.push("-filter_complex", sides.join(";"))
     args.push(output)
 
     return new Promise<void>((resolve, reject) => {
@@ -108,25 +155,6 @@ class Video {
         else reject(new Error("Error"))
       })
     })
-  }
-}
-
-function run(operation: Operation) {
-  switch (operation.type) {
-    case "volume":
-      return volume(operation)
-    case "trim":
-      return trim(operation)
-    case "speed":
-      return speed(operation)
-    case "flip":
-      return flip(operation)
-    case "crop":
-      return crop(operation)
-    case "scale":
-      return scale(operation)
-    case "text":
-      return text(operation)
   }
 }
 
