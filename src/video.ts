@@ -2,12 +2,17 @@ import { ffmpeg } from "./ffmpeg.js"
 import {
   concat as concatGraph,
   crop as cropGraph,
+  flip as flipGraph,
   fps as fpsGraph,
+  rotate as rotateGraph,
   scale as scaleGraph,
   source,
+  speed as speedGraph,
   trim as trimGraph,
   volume as volumeGraph,
   type ClipGraph,
+  type FlipDirection,
+  type Rotation,
   type ScaleOptions,
   type TrimOptions,
 } from "./graph.js"
@@ -34,6 +39,18 @@ class Video {
 
   fps(rate: number): Video {
     return new Video(fpsGraph(this.#graph, rate))
+  }
+
+  rotate(degrees: Rotation): Video {
+    return new Video(rotateGraph(this.#graph, degrees))
+  }
+
+  flip(direction: FlipDirection): Video {
+    return new Video(flipGraph(this.#graph, direction))
+  }
+
+  speed(factor: number): Video {
+    return new Video(speedGraph(this.#graph, factor))
   }
 
   crop(options: {

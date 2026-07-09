@@ -97,6 +97,43 @@ function planNode(graph: ClipGraph, context: PlanContext): StreamPair {
       return output
     }
 
+    case "rotate": {
+      const input = planNode(graph.input, context)
+      const output = labels(context)
+
+      context.filters.push(
+        `${bracket(input.video)}${rotateFilter(graph.degrees)}${bracket(output.video)}`,
+        `${bracket(input.audio)}anull${bracket(output.audio)}`,
+      )
+
+      return output
+    }
+
+    case "flip": {
+      const input = planNode(graph.input, context)
+      const output = labels(context)
+      const filter = graph.direction === "horizontal" ? "hflip" : "vflip"
+
+      context.filters.push(
+        `${bracket(input.video)}${filter}${bracket(output.video)}`,
+        `${bracket(input.audio)}anull${bracket(output.audio)}`,
+      )
+
+      return output
+    }
+
+    case "speed": {
+      const input = planNode(graph.input, context)
+      const output = labels(context)
+
+      context.filters.push(
+        `${bracket(input.video)}setpts=PTS/${graph.factor}${bracket(output.video)}`,
+        `${bracket(input.audio)}${atempoFilter(graph.factor)}${bracket(output.audio)}`,
+      )
+
+      return output
+    }
+
     case "crop": {
       const input = planNode(graph.input, context)
       const output = labels(context)
@@ -151,4 +188,34 @@ function labels(context: PlanContext): StreamPair {
 
 function bracket(stream: string): string {
   return `[${stream}]`
+}
+
+function rotateFilter(degrees: 90 | 180 | 270): string {
+  switch (degrees) {
+    case 90:
+      return "transpose=1"
+    case 180:
+      return "transpose=1,transpose=1"
+    case 270:
+      return "transpose=2"
+  }
+}
+
+function atempoFilter(factor: number): string {
+  const parts: number[] = []
+  let remaining = factor
+
+  while (remaining > 2) {
+    parts.push(2)
+    remaining /= 2
+  }
+
+  while (remaining < 0.5) {
+    parts.push(0.5)
+    remaining /= 0.5
+  }
+
+  parts.push(remaining)
+
+  return parts.map((part) => `atempo=${part}`).join(",")
 }

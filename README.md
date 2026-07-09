@@ -11,6 +11,7 @@ await video("input.mp4")
   .trim({ start: 2, end: 8 })
   .scale({ width: 1280 })
   .fps(30)
+  .rotate(90)
   .volume(0.8)
   .export("output.mp4")
 ```
@@ -53,6 +54,31 @@ Set the output frame rate.
 
 ```ts
 video("input.mp4").fps(30)
+```
+
+### `rotate(degrees)`
+
+Rotate the video frame. Degrees must be `90`, `180`, or `270`.
+
+```ts
+video("input.mp4").rotate(90)
+```
+
+### `flip(direction)`
+
+Flip the video frame horizontally or vertically.
+
+```ts
+video("input.mp4").flip("horizontal")
+video("input.mp4").flip("vertical")
+```
+
+### `speed(factor)`
+
+Change playback speed. `2` is twice as fast, and `0.5` is half speed.
+
+```ts
+video("input.mp4").speed(2)
 ```
 
 ### `crop(options)`

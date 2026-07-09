@@ -8,6 +8,9 @@ export type ClipGraph =
     }
   | { readonly kind: "volume"; readonly input: ClipGraph; readonly level: number }
   | { readonly kind: "fps"; readonly input: ClipGraph; readonly rate: number }
+  | { readonly kind: "rotate"; readonly input: ClipGraph; readonly degrees: Rotation }
+  | { readonly kind: "flip"; readonly input: ClipGraph; readonly direction: FlipDirection }
+  | { readonly kind: "speed"; readonly input: ClipGraph; readonly factor: number }
   | {
       readonly kind: "crop"
       readonly input: ClipGraph
@@ -31,6 +34,10 @@ export type ScaleOptions =
 export type TrimOptions =
   | { readonly start: number; readonly end?: number }
   | { readonly start?: number; readonly end: number }
+
+export type Rotation = 90 | 180 | 270
+
+export type FlipDirection = "horizontal" | "vertical"
 
 export function source(path: string): ClipGraph {
   if (path.length === 0) {
@@ -97,6 +104,34 @@ export function fps(input: ClipGraph, rate: number): ClipGraph {
   }
 
   return { kind: "fps", input, rate }
+}
+
+export function rotate(input: ClipGraph, degrees: Rotation): ClipGraph {
+  if (degrees !== 90 && degrees !== 180 && degrees !== 270) {
+    throw new Error("rotate degrees must be 90, 180, or 270")
+  }
+
+  return { kind: "rotate", input, degrees }
+}
+
+export function flip(input: ClipGraph, direction: FlipDirection): ClipGraph {
+  if (direction !== "horizontal" && direction !== "vertical") {
+    throw new Error('flip direction must be "horizontal" or "vertical"')
+  }
+
+  return { kind: "flip", input, direction }
+}
+
+export function speed(input: ClipGraph, factor: number): ClipGraph {
+  if (!Number.isFinite(factor)) {
+    throw new Error("speed factor must be a finite number")
+  }
+
+  if (factor <= 0) {
+    throw new Error("speed factor must be greater than 0")
+  }
+
+  return { kind: "speed", input, factor }
 }
 
 export function crop(
