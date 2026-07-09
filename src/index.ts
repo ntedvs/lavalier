@@ -1,2 +1,1 @@
-export { audio } from "./audio"
-export { video } from "./video"
+export { video } from "./video.js"
