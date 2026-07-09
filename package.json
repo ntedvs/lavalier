@@ -1,6 +1,6 @@
 {
   "name": "lavalier",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "A video editing toolkit for TypeScript.",
   "keywords": [
     "ffmpeg",

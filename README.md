@@ -104,9 +104,7 @@ video("input.mp4").scale({ height: 720 })
 Append videos in order.
 
 ```ts
-await video("intro.mp4")
-  .concat(video("main.mp4"), video("outro.mp4"))
-  .export("output.mp4")
+await video("intro.mp4").concat(video("main.mp4"), video("outro.mp4")).export("output.mp4")
 ```
 
 ### `export(output)`
