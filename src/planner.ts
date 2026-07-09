@@ -63,10 +63,61 @@ function planNode(graph: ClipGraph, context: PlanContext): StreamPair {
     case "trim": {
       const input = planNode(graph.input, context)
       const output = labels(context)
+      const end = graph.end === undefined ? "" : `:end=${graph.end}`
 
       context.filters.push(
-        `${bracket(input.video)}trim=start=${graph.start}:end=${graph.end},setpts=PTS-STARTPTS${bracket(output.video)}`,
-        `${bracket(input.audio)}atrim=start=${graph.start}:end=${graph.end},asetpts=PTS-STARTPTS${bracket(output.audio)}`,
+        `${bracket(input.video)}trim=start=${graph.start}${end},setpts=PTS-STARTPTS${bracket(output.video)}`,
+        `${bracket(input.audio)}atrim=start=${graph.start}${end},asetpts=PTS-STARTPTS${bracket(output.audio)}`,
+      )
+
+      return output
+    }
+
+    case "volume": {
+      const input = planNode(graph.input, context)
+      const output = labels(context)
+
+      context.filters.push(
+        `${bracket(input.video)}null${bracket(output.video)}`,
+        `${bracket(input.audio)}volume=${graph.level}${bracket(output.audio)}`,
+      )
+
+      return output
+    }
+
+    case "fps": {
+      const input = planNode(graph.input, context)
+      const output = labels(context)
+
+      context.filters.push(
+        `${bracket(input.video)}fps=${graph.rate}${bracket(output.video)}`,
+        `${bracket(input.audio)}anull${bracket(output.audio)}`,
+      )
+
+      return output
+    }
+
+    case "crop": {
+      const input = planNode(graph.input, context)
+      const output = labels(context)
+
+      context.filters.push(
+        `${bracket(input.video)}crop=w=${graph.width}:h=${graph.height}:x=${graph.x}:y=${graph.y}${bracket(output.video)}`,
+        `${bracket(input.audio)}anull${bracket(output.audio)}`,
+      )
+
+      return output
+    }
+
+    case "scale": {
+      const input = planNode(graph.input, context)
+      const output = labels(context)
+      const width = graph.width ?? -2
+      const height = graph.height ?? -2
+
+      context.filters.push(
+        `${bracket(input.video)}scale=w=${width}:h=${height}${bracket(output.video)}`,
+        `${bracket(input.audio)}anull${bracket(output.audio)}`,
       )
 
       return output
